@@ -15,6 +15,11 @@ The login is mocked for demo purposes with the following credentials:
 5. The login page saves the token in the browser local storage and redirects the user to the chat page
 6. The chat page connects to Realtime using the authenticated token saved in the local storage
 
+## Running this example
+
+Copy the code to your local PHP server and open the following URL in your browser (don't forget to enter your Realtime credentials where required in the code):
+
+	http://localhost/phpAuth/index.html
 
 ## About the Realtime Framework
 Part of the [The Realtime® Framework](http://framework.realtime.co/messaging), Realtime Cloud Messaging (aka ORTC) is a secure, fast and highly scalable cloud-hosted Pub/Sub real-time message broker for web and mobile apps.

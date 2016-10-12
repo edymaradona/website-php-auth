@@ -1,4 +1,4 @@
-var url = "http://localhost:8888/phpAuthServer/index.php"
+var url = "/phpAuthServer/index.php"
 
 
 function authenticate(jsonData, url, callBack) {
