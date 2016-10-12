@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Realtime basic chat</title>
+    <script type="text/babel">
+      // Get the authenticated token from the browser local storage
+      var storeToken = localStorage.getItem("token");
+      if (storeToken == null) {
+        // no token available, redirect back to index page
+        window.location = "../index.html";
+      };
+    </script>
+
+    <link rel="stylesheet" href="css/base.css" />
+    <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.97.7/css/materialize.min.css">
+    <style type="text/css">
+        
+
+        #container {
+          width: 400px;
+          margin:0 auto;
+          margin-top: 30px;
+          background-color: white;
+          padding: 20px;
+          border: solid 1px lightgray;
+          -webkit-box-shadow: 10px 10px 5px 0px rgba(0,0,0,0.75);
+          -moz-box-shadow: 10px 10px 5px 0px rgba(0,0,0,0.75);
+          box-shadow: 10px 10px 5px 0px rgba(0,0,0,0.75);
+        }
+
+        #msgInput {
+          margin-top: 30px;  
+        }
+
+        #log {
+          margin-top: 50px;
+          max-height: 200px;
+          overflow: auto;
+          scrollbar: none;
+          text-align: left;
+          padding: 20px;
+          border: solid 1px gray;
+        }
+
+        .connectionState{
+          border-radius: 25px;
+          background-color: #26a69a;
+          font-size: 20px;
+          color: white;
+          text-align: center;
+          margin-top: 5px;
+        }
+
+        .blockquote-left {
+          margin: 5px 0;
+          padding-left: 1.5rem;
+          border-left: 5px solid #ee6e73;
+          text-align: left;
+        }
+
+        .blockquote-right {
+          padding-right: 1.5rem;
+          border-right: 5px solid #2bbbad;
+          text-align: right;
+          margin-bottom: 5px;
+        }
+
+        .time {
+          font-size: 10px;
+        }
+    </style>
+
+  </head>
+  <body>
+
+    <div id="container">
+    
+    </div>
+
+    <script src="js/react.js"></script>
+    <script src="js/react-dom.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-core/5.8.24/browser.min.js"></script>
+    <script src="http://messaging-public.realtime.co/js/2.1.0/ortc.js"></script>
+    <script type="text/babel">
+      var tempMessages = [];
+
+      var RealtimeChat = React.createClass({
+        getInitialState: function(){
+          // get the authenticated token from the browser local storage
+          var storeToken = localStorage.getItem("token");
+          return {
+            clusterUrl: "http://ortc-developers.realtime.co/server/2.1/",
+            token: storeToken,
+            appKey: "ENTER-YOUR-REALTIME-APPKEY",
+            channel: "yellow",
+            connectionMetadata: "clientConnMeta",
+            connection:"Not connected",
+            subscribe:"Not subscribed",
+            messages: [],
+            newMessage: "",
+            ortcClient: null,
+            myId: "ID_" + Math.floor((Math.random() * 1000) + 1),
+          };
+        },
+
+        componentDidMount: function(){
+          this.doConnect();
+        },
+
+        doConnect: function(e){
+          var pThis = this;
+          var pstate = this.state;
+          var onMessage = this._onMessage;
+          loadOrtcFactory(IbtRealTimeSJType, function (factory, error) {
+             if (error != null) {
+              alert("Factory error: " + error.message);
+             } else {
+             
+               if (factory != null) {
+                // Create Cloud Messaging client
+                pstate.ortcClient = factory.createClient();
+             
+                // Set client properties
+                pstate.ortcClient.setConnectionMetadata(pstate.connectionMetadata);
+                pstate.ortcClient.setClusterUrl(pstate.clusterUrl);
+             
+                pstate.ortcClient.onConnected = function (theClient) {
+                  // client theClient is connected
+                  pThis.setState({connection:"Connected"});
+                  theClient.subscribe(pstate.channel, true,
+                           function (theClient, channel, msg) {
+                             onMessage({"message":msg, "channel":channel});               
+                           });
+                };
+             
+                pstate.ortcClient.onSubscribed = function (theClient, channel) {
+                   pThis.setState({subscribe:"Channel is subscribed"});
+                };
+
+                pstate.ortcClient.onException = function (theclient, error) {
+                  console.log(error);
+                };
+             
+                // connect using the authenticated token
+                pstate.ortcClient.connect(pstate.appKey, pstate.token);
+               }
+             }
+            });
+        },
+
+        _onMessage: function(e){
+          this._log(e.message);
+        },
+
+        updateNewMessage: function(event){
+          this.setState({newMessage: event.target.value});
+        },
+
+        getFormattedDate: function() {
+          var date = new Date();
+          var hours = date.getHours();
+          if (hours < 10) {
+            hours = "0"+hours;
+          };
+
+          var min = date.getMinutes();
+          if (min < 10) {
+            min = "0"+min;
+          };
+
+          var sec = date.getSeconds();
+          if (sec < 10) {
+            sec = "0"+sec;
+          };
+
+          var str = hours + ":" + min + ":" + sec;
+          return str;
+        },
+
+        doSendMessage: function(){
+          this.state.ortcClient.send(this.state.channel, JSON.stringify({id:this.state.myId,msg:this.state.newMessage}));
+        },
+
+        _log: function(message: string)
+        {
+          var time = this.getFormattedDate();
+
+          var temp = [];
+          temp[0] = {"text":message, "time":time};
+
+          for (var i = 0; i < tempMessages.length; i++) {
+            temp[""+(i+1)] =  tempMessages[i];
+          };
+          tempMessages = temp;
+          this.setState({messages: tempMessages});
+        },
+
+        render: function() {
+          var state = this.state;
+          return (
+            <div>
+              <div className="connectionState">{this.state.connection}</div>
+              <div className="connectionState">{this.state.subscribe}</div>
+              <input type="text" id="msgInput" className="materialize-textarea" placeholder="Enter your message" value={this.state.newMessage} onChange={this.updateNewMessage}/>
+              <button className="btn waves-effect waves-light" type="submit" name="action" onClick={this.doSendMessage}>
+                Send Message
+              </button>
+                <ul className="log">
+                  {this.state.messages.map(function(listValue){
+                    var jsonMsg = JSON.parse(listValue.text);
+                    if (jsonMsg.id === state.myId ) {
+                      return <li className="blockquote-right" key={listValue.time}><div>{jsonMsg.msg}<div className="time">{listValue.time}</div></div></li>;
+                    }else{
+                      return <li className="blockquote-left" key={listValue.time}><div>{jsonMsg.msg}<div className="time">{listValue.time}</div></div></li>;
+                    }
+                  })}
+                </ul>
+            </div>
+          )
+        }
+
+      });
+
+      ReactDOM.render(
+        <RealtimeChat />,
+        document.getElementById('container')
+      );
+    </script>
+  </body>
+</html>
