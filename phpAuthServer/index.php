@@ -37,7 +37,7 @@
 	    $rt = new Realtime( $URL, $AK, $PK, $TK );
 	    $ttl = 180000;
 
-	    // authenticate the tolen for the user
+	    // authenticate the token for the user
 	    $result = $rt->auth(
 	        array(
 	            $CH => 'w'
