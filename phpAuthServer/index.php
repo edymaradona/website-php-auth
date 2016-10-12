@@ -13,7 +13,7 @@
 	    return $randomString;
 	}
 
-	$URL = 'http://ortc-developers.realtime.co/server/2.1';
+	$URL = 'https://ortc-developers.realtime.co/server/ssl/2.1';
 	$AK = 'ENTER-YOUR-REALTIME-APPKEY';
 	$PK = 'ENTER-YOUR-REALTIME-PRIVATE-KEY';
 
